@@ -78,12 +78,22 @@ func (s *System) collisions(dt float64) {
 				continue
 			}
 
-			normal := obj1.Position().Sub(obj2.Position())
-			percent := 0.0008 / (obj1.M + obj2.M)
+			//normal := obj1.Position().Sub(obj2.Position())
+			//percent := 1e-6 / (obj1.M + obj2.M)
+			//
+			//correction := normal.Mul(penetration / (1./obj1.M + 1./obj2.M) * percent)
+			//obj1.P = obj1.P.Add(correction.Mul(obj1.M))
+			//obj2.P = obj2.P.Sub(correction.Mul(obj2.M))
+			//ƒ1, ƒ2 := collisions.ResolveSpheres(obj1, obj2, dt)
 
-			correction := normal.Mul(penetration / (1./obj1.M + 1./obj2.M) * percent)
-			obj1.P = obj1.P.Add(correction.Mul(obj1.M))
-			obj2.P = obj2.P.Sub(correction.Mul(obj2.M))
+			normal := obj1.Position().Sub(obj2.Position()).Normalize()
+			_ = normal
+			_ = penetration
+
+			//
+			//correction := normal.Mul(penetration / (obj1.M + obj2.M))
+			//obj1.P = obj1.P.Add(correction.Mul(obj1.M))
+			//obj2.P = obj2.P.Sub(correction.Mul(obj2.M))
 			ƒ1, ƒ2 := collisions.ResolveSpheres(obj1, obj2, dt)
 
 			obj1.ApplyForce(dt, ƒ1)

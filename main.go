@@ -45,9 +45,19 @@ func setup(win *window.Window, scene *solid2.Scene) {
 	dot1.SetColor(mgl32.Vec4{241. / 255., 120. / 255., 41. / 255., 1.})
 	dot1.R = 0.1 * float64(scl)
 
-	lenf := 38
+	lenf := 72
 	objs := make([]*solid2.Object, lenf)
-	for i := 0; i < lenf; i++ {
+	for i := 0; i < lenf/2; i++ {
+		obj := scene.ObtainObject()
+		obj.SetColor(mgl32.Vec4{0., 191. / 255., 1., 1.})
+		obj.M = 300.
+		scl := float32(obj.M / 1000)
+		obj.SetScale(scl)
+		obj.R = 0.1 * float64(scl)
+		objs[i] = obj
+	}
+
+	for i := lenf / 2; i < lenf; i++ {
 		obj := scene.ObtainObject()
 		obj.SetColor(mgl32.Vec4{0., 191. / 255., 1., 1.})
 		obj.M = 300.
@@ -66,7 +76,22 @@ func setup(win *window.Window, scene *solid2.Scene) {
 		var pos mgl32.Vec3
 		pos[0] = start
 		pos[1] = 0.8
-		for i, obj := range objs {
+		for i := 0; i < lenf; i++ {
+			obj := objs[i]
+			if i%width == 0 {
+				pos[1] += 0.2
+				pos[0] = start
+			} else {
+				pos[0] += 5. / float32(width)
+			}
+			obj.SetPosition(pos)
+			obj.V = mgl64.Vec3{}
+		}
+
+		pos[0] = start
+		pos[1] = -2.2
+		for i := lenf / 2; i < lenf; i++ {
+			obj := objs[i]
 			if i%width == 0 {
 				pos[1] += 0.2
 				pos[0] = start

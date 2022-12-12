@@ -25,12 +25,12 @@ func loadShaders() {
 		},
 	)
 
-	LineShader = graphics.NewProgram(
-		assets.LineVertexShader,
-		assets.AlbedoFragmentShader,
-		[]string{
-			"model", "view", "project",
-			"color",
-		},
-	)
+	//LineShader = graphics.NewProgram(
+	//	assets.LineVertexShader,
+	//	assets.AlbedoFragmentShader,
+	//	[]string{
+	//		"model", "view", "project",
+	//		"color",
+	//	},
+	//)
 }
