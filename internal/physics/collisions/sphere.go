@@ -21,7 +21,8 @@ func Spheres(c1, c2 SphereCollided) (bool, float64) {
 
 func ResolveSpheres(c1, c2 Collided, dt float64) (ƒ1 mgl64.Vec3, ƒ2 mgl64.Vec3) {
 	rv := c1.Velocity().Sub(c2.Velocity())
-	n := c1.Position().Sub(c2.Position()).Normalize()
+	p := c1.Position().Sub(c2.Position())
+	n := p.Normalize()
 
 	velocityAlongNormal := rv.Dot(n)
 
@@ -42,6 +43,7 @@ func ResolveSpheres(c1, c2 Collided, dt float64) (ƒ1 mgl64.Vec3, ƒ2 mgl64.Vec3
 	impulse := n.Mul(j)
 
 	factor := 1.
-	return impulse.Mul(-1. / c1.Mass() * factor).Mul(1. / dt), impulse.Mul(1. / c2.Mass() * factor).Mul(1. / dt)
+	return impulse.Mul(-1. / c1.Mass() * factor).Mul(1. / dt),
+		impulse.Mul(1. / c2.Mass() * factor).Mul(1. / dt)
 
 }

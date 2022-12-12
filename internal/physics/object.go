@@ -5,10 +5,10 @@ import (
 )
 
 type Object struct {
-	M float64
-	V mgl64.Vec3
-	P mgl64.Vec3
-	R float64
+	M    float64
+	V, F mgl64.Vec3
+	P    mgl64.Vec3
+	R    float64
 }
 
 func (obj *Object) Position() mgl64.Vec3 {
@@ -37,7 +37,8 @@ func (obj *Object) SetVelocity(vel mgl64.Vec3) {
 }
 
 func (obj *Object) ApplyForce(dt float64, force mgl64.Vec3) {
-	a := force.Mul(1. / obj.M)
+	obj.F = force
+	a := obj.F.Mul(1. / obj.M)
 	obj.V = obj.V.Add(a.Mul(dt))
 }
 

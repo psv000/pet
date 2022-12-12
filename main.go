@@ -1,18 +1,16 @@
 package main
 
 import (
+	"github.com/go-gl/glfw/v3.3/glfw"
+	"github.com/go-gl/mathgl/mgl32"
 	"github.com/go-gl/mathgl/mgl64"
 	"math"
 	solid2 "pet/internal/app/solid"
+	"pet/internal/physics"
 	"pet/internal/resources"
+	"pet/internal/window"
 	"runtime"
 	"time"
-
-	"pet/internal/physics"
-	"pet/internal/window"
-
-	"github.com/go-gl/glfw/v3.3/glfw"
-	"github.com/go-gl/mathgl/mgl32"
 )
 
 func init() {
@@ -113,6 +111,10 @@ func setup(win *window.Window, scene *solid2.Scene) {
 	for !win.ShouldClose() {
 		win.BeforeRender()
 		if win.InputManager().IsActive(window.ProgramPause) {
+			dot1.V = mgl64.Vec3{0.}
+			for _, obj := range objs {
+				obj.V = mgl64.Vec3{0.}
+			}
 			time.Sleep(time.Millisecond * 16)
 			win.ResetFrameTime()
 			continue
