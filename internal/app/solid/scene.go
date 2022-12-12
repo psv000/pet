@@ -2,7 +2,6 @@ package solid
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
-	"pet/internal/app"
 	"pet/internal/physics"
 	"unsafe"
 
@@ -29,7 +28,7 @@ func NewScene(window *window.Window, ph *physics.System) *Scene {
 
 func (s *Scene) ObtainObject() *Object {
 	obj := NewObject(
-		app.NewDot(),
+		NewDot(),
 		s.ph.ObtainObject(),
 	)
 	s.objects[uintptr(unsafe.Pointer(obj))] = obj

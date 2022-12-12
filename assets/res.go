@@ -13,6 +13,9 @@ var AlbedoFragmentShader string
 //go:embed shaders/dot.frag
 var DotFragmentShader string
 
+//go:embed shaders/line.vert
+var LineVertexShader string
+
 // - Fonts -
 
 //go:embed fonts/luxisr.ttf

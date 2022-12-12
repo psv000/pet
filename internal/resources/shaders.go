@@ -7,8 +7,8 @@ import (
 
 // - shaders -
 var (
-	DotShader    graphics.Shader
-	VectorShader graphics.Shader
+	DotShader  graphics.Program
+	LineShader graphics.Program
 )
 
 func Load() {
@@ -16,7 +16,7 @@ func Load() {
 }
 
 func loadShaders() {
-	DotShader = graphics.NewShader(
+	DotShader = graphics.NewProgram(
 		assets.BasicVertexShader,
 		assets.DotFragmentShader,
 		[]string{
@@ -25,8 +25,8 @@ func loadShaders() {
 		},
 	)
 
-	VectorShader = graphics.NewShader(
-		assets.BasicVertexShader,
+	LineShader = graphics.NewProgram(
+		assets.LineVertexShader,
 		assets.AlbedoFragmentShader,
 		[]string{
 			"model", "view", "project",

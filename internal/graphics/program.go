@@ -5,20 +5,20 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-type Shader interface {
+type Program interface {
 	ID() uint32
 	Apply()
 	SetUniformValue(name string, value any)
 }
 
-type shader struct {
+type program struct {
 	descriptor uint32
 	uniforms   map[string]int32
 	values     map[string]any
 }
 
-func NewShader(vertex, fragment string, uniforms []string) Shader {
-	s := &shader{
+func NewProgram(vertex, fragment string, uniforms []string) Program {
+	s := &program{
 		uniforms: make(map[string]int32, 16),
 		values:   make(map[string]any, 16),
 	}
@@ -26,7 +26,7 @@ func NewShader(vertex, fragment string, uniforms []string) Shader {
 	return s
 }
 
-func (s *shader) init(vertex, fragment string, uniforms []string) {
+func (s *program) init(vertex, fragment string, uniforms []string) {
 	shaders := compileShaders(vertex, fragment)
 	s.descriptor = linkShaders(shaders)
 
@@ -36,11 +36,11 @@ func (s *shader) init(vertex, fragment string, uniforms []string) {
 	}
 }
 
-func (s *shader) ID() uint32 {
+func (s *program) ID() uint32 {
 	return s.descriptor
 }
 
-func (s *shader) Apply() {
+func (s *program) Apply() {
 	gl.UseProgram(s.descriptor)
 	for name := range s.uniforms {
 		loc := s.uniforms[name]
@@ -59,7 +59,7 @@ func (s *shader) Apply() {
 	}
 }
 
-func (s *shader) SetUniformValue(name string, value any) {
+func (s *program) SetUniformValue(name string, value any) {
 	if _, found := s.uniforms[name]; found {
 		s.values[name] = value
 	}

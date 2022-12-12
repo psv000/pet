@@ -1,4 +1,4 @@
-package app
+package solid
 
 import (
 	"pet/internal/graphics"
