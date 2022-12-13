@@ -16,7 +16,7 @@ func Spheres(c1, c2 SphereCollided) (bool, float64) {
 	dsq := l.Dot(l)
 	r := c1.Radius() + c2.Radius()
 	rsq := r * r
-	return dsq <= rsq, c1.Radius() + c2.Radius() - math.Sqrt(dsq)
+	return dsq <= rsq, r - math.Sqrt(dsq)
 }
 
 func ResolveSpheres(c1, c2 Collided, dt float64) (ƒ1 mgl64.Vec3, ƒ2 mgl64.Vec3) {

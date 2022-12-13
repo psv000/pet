@@ -38,8 +38,8 @@ func (s *System) Update(dt float64) {
 	s.gravity(dt)
 	s.collisions(dt)
 
-	for _, obj1 := range s.objects {
-		obj1.Update(dt)
+	for _, obj := range s.objects {
+		obj.Update(dt)
 	}
 }
 
@@ -104,7 +104,7 @@ func (s *System) collisions(dt float64) {
 				obj2.ApplyForce(dt, ƒ2)
 			}
 			for _, obj3 := range s.objects {
-				if obj2 == obj3 || obj2 == obj3 {
+				if obj2 == obj3 {
 					continue
 				}
 
