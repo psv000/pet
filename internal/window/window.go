@@ -90,7 +90,7 @@ func (w *Window) Render(draw func(dt float64)) {
 	w.dt = now - w.lastFrameTime
 	w.lastFrameTime = now
 
-	gl.ClearColor(0., 0., 0., 1.0)
+	gl.ClearColor(0., 0., 0., 1.)
 	gl.Clear(gl.COLOR_BUFFER_BIT)
 
 	draw(w.dt)

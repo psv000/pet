@@ -7,8 +7,11 @@ import _ "embed"
 //go:embed shaders/general.vert
 var BasicVertexShader string
 
-//go:embed shaders/albedo.frag
-var AlbedoFragmentShader string
+//go:embed shaders/general.frag
+var BasicFragmentShader string
+
+//go:embed shaders/dot.vert
+var DotVertexShader string
 
 //go:embed shaders/dot.frag
 var DotFragmentShader string

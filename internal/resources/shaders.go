@@ -9,15 +9,27 @@ import (
 var (
 	DotShader  graphics.Program
 	LineShader graphics.Program
+
+	ProgramList []graphics.Program
 )
 
 func Load() {
-	loadShaders()
+	loadPrograms()
 }
 
-func loadShaders() {
-	DotShader = graphics.NewProgram(
-		assets.BasicVertexShader,
+func newProgram(vertex, fragment string, uniforms []string) graphics.Program {
+	program := graphics.NewProgram(
+		vertex,
+		fragment,
+		uniforms,
+	)
+	ProgramList = append(ProgramList, program)
+	return program
+}
+
+func loadPrograms() {
+	DotShader = newProgram(
+		assets.DotVertexShader,
 		assets.DotFragmentShader,
 		[]string{
 			"model", "view", "project",
@@ -25,12 +37,12 @@ func loadShaders() {
 		},
 	)
 
-	//LineShader = graphics.NewProgram(
-	//	assets.LineVertexShader,
-	//	assets.AlbedoFragmentShader,
-	//	[]string{
-	//		"model", "view", "project",
-	//		"color",
-	//	},
-	//)
+	LineShader = newProgram(
+		assets.LineVertexShader,
+		assets.BasicFragmentShader,
+		[]string{
+			"thickness", "length", "model", "view", "project",
+			"color",
+		},
+	)
 }

@@ -1,7 +1,6 @@
 package solid
 
 import (
-	"github.com/go-gl/mathgl/mgl32"
 	"pet/internal/graphics"
 	"pet/internal/resources"
 )
@@ -18,12 +17,15 @@ func NewLine() Line {
 	l := line{
 		Line: graphics.NewLine(
 			resources.LineShader,
-			1.,
+			2.,
 			[]float32{
-				0., 0., 0.,
-				1., 0., 0.,
+				0., 0., 0., 0., -1., 0.,
+				0.1, 0., 0., 0., -1., 0.,
+				0.1, 0., 0., 0., 1., 0.,
+				0., 0., 0., 0., 1., 0.,
+			}, []uint32{
+				0, 1, 2, 0, 2, 3,
 			}),
 	}
-	l.SetColor(mgl32.Vec4{1., 1., 0., 1.})
 	return l
 }

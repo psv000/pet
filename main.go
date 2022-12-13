@@ -28,6 +28,9 @@ func main() {
 
 	window := window.NewWindow(1024, 768, "Pet")
 	resources.Load()
+	for _, p := range resources.ProgramList {
+		p.OnResolutionChange(mgl32.Vec2{1024, 768})
+	}
 
 	physicsSystem := physics.NewSystem()
 	scene := solid2.NewScene(window, physicsSystem)

@@ -9,6 +9,7 @@ type Program interface {
 	ID() uint32
 	Apply()
 	SetUniformValue(name string, value any)
+	OnResolutionChange(mgl32.Vec2)
 }
 
 type program struct {
@@ -18,6 +19,7 @@ type program struct {
 }
 
 func NewProgram(vertex, fragment string, uniforms []string) Program {
+	uniforms = append(uniforms, "resolution")
 	s := &program{
 		uniforms: make(map[string]int32, 16),
 		values:   make(map[string]any, 16),
@@ -52,8 +54,12 @@ func (s *program) Apply() {
 				gl.Uniform4f(loc, t[0], t[1], t[2], t[3])
 			case mgl32.Vec3:
 				gl.Uniform3f(loc, t[0], t[1], t[2])
+			case mgl32.Vec2:
+				gl.Uniform2f(loc, t[0], t[1])
 			case float32:
 				gl.Uniform1f(loc, t)
+			default:
+				panic("unsupported uniform type")
 			}
 		}
 	}
@@ -63,4 +69,8 @@ func (s *program) SetUniformValue(name string, value any) {
 	if _, found := s.uniforms[name]; found {
 		s.values[name] = value
 	}
+}
+
+func (s *program) OnResolutionChange(resolution mgl32.Vec2) {
+	s.SetUniformValue("resolution", resolution)
 }
