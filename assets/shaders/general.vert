@@ -6,8 +6,6 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 project;
 
-out vec2 uv;
-
 void main()
 {
     gl_Position = project * view * model * vec4(position, 1.0);

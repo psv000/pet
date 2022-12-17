@@ -9,6 +9,7 @@ import (
 var (
 	DotShader  graphics.Program
 	LineShader graphics.Program
+	MeshShader graphics.Program
 
 	ProgramList []graphics.Program
 )
@@ -42,6 +43,15 @@ func loadPrograms() {
 		assets.BasicFragmentShader,
 		[]string{
 			"thickness", "length", "model", "view", "project",
+			"color",
+		},
+	)
+
+	MeshShader = newProgram(
+		assets.BasicVertexShader,
+		assets.BasicFragmentShader,
+		[]string{
+			"model", "view", "project",
 			"color",
 		},
 	)

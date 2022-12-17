@@ -9,11 +9,10 @@ import (
 type line struct {
 	node
 	colorful
+	programmable
 
 	vao, vbo, ibo uint32
 	indices       int32
-
-	program Program
 
 	thickness float32
 }
@@ -26,7 +25,9 @@ func NewLine(program Program, thickness float32, vertices []float32, indices []u
 		colorful: colorful{
 			color: mgl32.Vec4{0., 1., 0., 1.},
 		},
-		program:   program,
+		programmable: programmable{
+			program: program,
+		},
 		thickness: thickness,
 		indices:   int32(len(indices)),
 	}

@@ -5,7 +5,7 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/go-gl/mathgl/mgl64"
 	"math"
-	solid2 "pet/internal/app/solid"
+	solid "pet/internal/app/solid"
 	"pet/internal/physics"
 	"pet/internal/resources"
 	"pet/internal/window"
@@ -33,75 +33,73 @@ func main() {
 	}
 
 	physicsSystem := physics.NewSystem()
-	scene := solid2.NewScene(window, physicsSystem)
+	scene := solid.NewScene(window, physicsSystem)
 
 	setup(window, scene)
 }
 
-func setup(win *window.Window, scene *solid2.Scene) {
-	dot1 := scene.ObtainObject()
-	dot1.M = 100_000.
+func setup(win *window.Window, scene *solid.Scene) {
+	dot1 := scene.ObtainSphere()
+	dot1.Physics().SetMass(2.)
 	scl := float32(3.)
-	dot1.SetScale(scl)
-	dot1.SetColor(mgl32.Vec4{241. / 255., 120. / 255., 41. / 255., 1.})
-	dot1.R = 0.1 * float64(scl)
+	dot1.Graphics().SetScale(scl)
+	dot1.Graphics().SetColor(mgl32.Vec4{241. / 255., 120. / 255., 41. / 255., 1.})
+	dot1.Physics().SetRadius(0.1 * float64(scl))
+	dot1.Physics().SetRestitution(0.9)
 
-	lenf := 72
-	objs := make([]*solid2.Object, lenf)
-	for i := 0; i < lenf/2; i++ {
-		obj := scene.ObtainObject()
-		obj.SetColor(mgl32.Vec4{0., 191. / 255., 1., 1.})
-		obj.M = 300.
-		scl := float32(obj.M / 1000)
-		obj.SetScale(scl)
-		obj.R = 0.1 * float64(scl)
-		objs[i] = obj
-	}
+	dot2 := scene.ObtainSphere()
+	dot2.Physics().SetMass(3.)
+	scl = float32(2.7)
+	dot2.Graphics().SetScale(scl)
+	dot2.Graphics().SetColor(mgl32.Vec4{137. / 255., 18. / 255., 89. / 255., 1.})
+	dot2.Physics().SetRadius(0.1 * float64(scl))
+	dot2.Physics().SetRestitution(0.5)
 
-	for i := lenf / 2; i < lenf; i++ {
-		obj := scene.ObtainObject()
-		obj.SetColor(mgl32.Vec4{0., 191. / 255., 1., 1.})
-		obj.M = 300.
-		scl := float32(obj.M / 1000)
-		obj.SetScale(scl)
-		obj.R = 0.1 * float64(scl)
-		objs[i] = obj
+	var objs []*solid.Sphere
+	for i := 0; i < 10; i++ {
+		obj := scene.ObtainSphere()
+		obj.Physics().SetMass(0.5 + 0.05*float64(i))
+		scl = float32(0.4)
+		obj.Graphics().SetScale(scl)
+		obj.Graphics().SetColor(mgl32.Vec4{182. / 255., 181. / 255., 233. / 255., 1.})
+		obj.Physics().SetRadius(0.1 * float64(scl))
+		obj.Physics().SetRestitution(0.6)
+		objs = append(objs, obj)
 	}
 
 	reset := func() {
 		dot1.SetPosition(mgl32.Vec3{})
-		dot1.SetVelocity(mgl64.Vec3{})
+		dot1.Physics().SetVelocity(mgl64.Vec3{0.5, 0, 0})
 
-		width := 6
-		start := float32(-2.)
-		var pos mgl32.Vec3
-		pos[0] = start
-		pos[1] = 0.8
-		for i := 0; i < lenf; i++ {
-			obj := objs[i]
-			if i%width == 0 {
-				pos[1] += 0.2
-				pos[0] = start
-			} else {
-				pos[0] += 5. / float32(width)
-			}
-			obj.SetPosition(pos)
-			obj.V = mgl64.Vec3{}
-		}
+		dot2.SetPosition(mgl32.Vec3{1.1, -0.3, 0})
+		dot2.Physics().SetVelocity(mgl64.Vec3{-0.5, -0.1, 0})
 
-		pos[0] = start
-		pos[1] = -2.2
-		for i := lenf / 2; i < lenf; i++ {
-			obj := objs[i]
-			if i%width == 0 {
-				pos[1] += 0.2
-				pos[0] = start
-			} else {
-				pos[0] += 5. / float32(width)
-			}
-			obj.SetPosition(pos)
-			obj.V = mgl64.Vec3{}
+		for i, obj := range objs {
+			obj.Physics().SetPosition(mgl64.Vec3{-0.8 + 0.2*float64(i), 1, 0})
+			obj.Physics().SetVelocity(mgl64.Vec3{})
 		}
+	}
+
+	pos := []mgl64.Vec3{
+		{-2, -1.5, 0},
+		{-2, -1.4, 0},
+		{-2, 1.5, 0},
+		{1.9, -1.4, 0},
+	}
+	size := []mgl64.Vec3{
+		{4, 0.1, 0},
+		{0.1, 3, 0},
+		{4, 0.1, 0},
+		{0.1, 3, 0},
+	}
+
+	for i := 0; i < len(pos); i++ {
+		r := scene.ObtainWall(pos[i], size[i])
+		r.Graphics().SetColor(mgl32.Vec4{0.3, 0.01, 0.1, 1})
+		r.Physics().SetMass(9999)
+		r.Physics().SetRestitution(0.7)
+		r.Physics().SetSize(size[i])
+		r.Physics().SetPosition(pos[i])
 	}
 
 	reset()
@@ -114,10 +112,8 @@ func setup(win *window.Window, scene *solid2.Scene) {
 	for !win.ShouldClose() {
 		win.BeforeRender()
 		if win.InputManager().IsActive(window.ProgramPause) {
-			dot1.V = mgl64.Vec3{0.}
-			for _, obj := range objs {
-				obj.V = mgl64.Vec3{0.}
-			}
+			dot1.Physics().SetVelocity(mgl64.Vec3{0.})
+
 			time.Sleep(time.Millisecond * 16)
 			win.ResetFrameTime()
 			continue
@@ -136,7 +132,7 @@ func setup(win *window.Window, scene *solid2.Scene) {
 		}
 
 		win.Render(func(dt float64) {
-			//dot2.V = mgl64.Vec3{}
+			//dot2.v = mgl64.Vec3{}
 			scene.Update(dt, speedFactor)
 		})
 	}

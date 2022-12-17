@@ -7,15 +7,17 @@ import (
 
 type Line interface {
 	graphics.Primitive
+	SetLength(length float32)
 }
 
 type line struct {
-	Line
+	graphics.Primitive
+	length float32
 }
 
 func NewLine() Line {
-	l := line{
-		Line: graphics.NewLine(
+	l := &line{
+		Primitive: graphics.NewLine(
 			resources.LineShader,
 			2.,
 			[]float32{
@@ -28,4 +30,8 @@ func NewLine() Line {
 			}),
 	}
 	return l
+}
+
+func (l *line) SetLength(length float32) {
+	l.Program().SetUniformValue("length", 2*length)
 }

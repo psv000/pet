@@ -2,32 +2,51 @@ package physics
 
 import (
 	"github.com/go-gl/mathgl/mgl64"
-	"pet/internal/physics/collisions"
 )
 
 type System struct {
-	g       float64
-	objects []*Object
+	g, a float64
+
+	spheres []SphereCollided
+	cuboids []CuboidCollided
 }
 
 func NewSystem() *System {
 	return &System{
-		objects: make([]*Object, 0, 32),
-		g:       6.6743e-7,
+		spheres: make([]SphereCollided, 0, 32),
+		cuboids: make([]CuboidCollided, 0, 32),
+		g:       6.6743e-3,
+		a:       9.81,
 	}
 }
 
-func (s *System) ObtainObject() *Object {
-	obj := &Object{}
-	s.objects = append(s.objects, obj)
-	return obj
+func (s *System) ObtainSphere() SphereCollided {
+	sphere := NewSphere()
+	s.spheres = append(s.spheres, sphere)
+	return sphere
 }
 
-func (s *System) ReleaseObject(del *Object) {
-	for i, obj := range s.objects {
+func (s *System) ReleaseSphere(del SphereCollided) {
+	for i, obj := range s.spheres {
 		if obj == del {
-			s.objects[i] = s.objects[len(s.objects)-1]
-			s.objects = s.objects[:len(s.objects)-1]
+			s.spheres[i] = s.spheres[len(s.spheres)-1]
+			s.spheres = s.spheres[:len(s.spheres)-1]
+			return
+		}
+	}
+}
+
+func (s *System) ObtainCuboid() CuboidCollided {
+	cuboid := NewCuboid()
+	s.cuboids = append(s.cuboids, cuboid)
+	return cuboid
+}
+
+func (s *System) ReleaseCuboid(del CuboidCollided) {
+	for i, obj := range s.cuboids {
+		if obj == del {
+			s.cuboids[i] = s.cuboids[len(s.cuboids)-1]
+			s.cuboids = s.cuboids[:len(s.cuboids)-1]
 			return
 		}
 	}
@@ -37,25 +56,23 @@ func (s *System) Update(dt float64) {
 	s.gravity(dt)
 	s.collisions(dt)
 
-	for _, obj := range s.objects {
+	for _, obj := range s.spheres {
 		obj.Update(dt)
 	}
 }
 
 func (s *System) gravity(dt float64) {
-	set := make(map[*Object]*Object, len(s.objects))
-	for _, obj1 := range s.objects {
-		for _, obj2 := range s.objects {
+	set := make(map[SphereCollided]SphereCollided, len(s.spheres))
+	for _, obj1 := range s.spheres {
+		for _, obj2 := range s.spheres {
 			if obj1 == obj2 || set[obj2] == obj1 {
 				continue
 			}
 			set[obj1] = obj2
-			Dir := obj2.P.Sub(obj1.P)
-			S := Dir.Len()
-			if S < 1e-3 {
-				continue
-			}
-			F := s.g * (obj1.M * obj2.M) / (S * S)
+			Dir := obj2.Position().Sub(obj1.Position())
+			r := Dir.Len()
+			r2 := r * r
+			F := s.g * obj1.Mass() * obj2.Mass() / r2
 
 			ƒ1 := Dir.Normalize().Mul(F)
 			ƒ2 := ƒ1.Mul(-1.)
@@ -63,54 +80,45 @@ func (s *System) gravity(dt float64) {
 			obj1.ApplyForce(dt, ƒ1)
 			obj2.ApplyForce(dt, ƒ2)
 		}
+		obj1.ApplyForce(dt, mgl64.Vec3{0., -1., 0.}.Mul(obj1.Mass()*s.a))
 	}
 }
 
 func (s *System) collisions(dt float64) {
-	processed := make(map[*Object]*Object, len(s.objects))
+	processed := make(map[SphereCollided]SphereCollided, len(s.spheres))
 
 	var c mgl64.Vec3
-	for _, obj := range s.objects {
-		c = c.Add(obj.P)
+	for _, obj := range s.spheres {
+		c = c.Add(obj.Position())
 	}
-	c = c.Mul(1. / float64(len(s.objects)))
+	c = c.Mul(1. / float64(len(s.spheres)))
 
-	for _, obj1 := range s.objects {
-		for _, obj2 := range s.objects {
+	for _, obj1 := range s.spheres {
+		for _, obj2 := range s.spheres {
 			if obj1 == obj2 || processed[obj2] == obj1 {
 				continue
 			}
 			processed[obj1] = obj2
-			processSpheres(dt, obj1, obj2)
 
-			for _, obj3 := range s.objects {
-				if obj2 == obj3 || obj1 == obj3 {
-					continue
-				}
-				processSpheres(dt, obj2, obj3)
+			var collision bool
+			var penetration float64
+			if collision, penetration = DetectSpheresCollision(obj1, obj2); !collision {
+				continue
 			}
+			AmendSpheres(penetration, obj1, obj2)
+			ResolveSpheresCollision(dt, obj1, obj2)
 		}
 	}
-}
+	for _, obj1 := range s.spheres {
+		for _, obj2 := range s.cuboids {
+			ok, penetration, point := DetectSphereVsCuboidCollision(obj1, obj2)
+			if !ok {
+				continue
+			}
+			sdt := obj1.Position().Sub(point).Normalize().Mul(penetration * dt)
+			obj1.SetPosition(obj1.Position().Add(sdt))
 
-func processSpheres(dt float64, obj1, obj2 *Object) {
-	if ok, correction := correction(obj1, obj2); ok {
-		obj1.P = obj1.P.Add(correction)
-		obj2.P = obj2.P.Sub(correction)
-
-		ƒ1, ƒ2 := collisions.ResolveSpheres(obj1, obj2, dt)
-		obj1.ApplyForce(dt, ƒ1)
-		obj2.ApplyForce(dt, ƒ2)
+			ResolveSphereVsCuboidCollision(obj1, obj2, point)
+		}
 	}
-}
-
-func correction(obj1, obj2 *Object) (bool, mgl64.Vec3) {
-	var collision bool
-	var penetration float64
-	if collision, penetration = collisions.Spheres(obj1, obj2); !collision {
-		return false, mgl64.Vec3{}
-	}
-	normal := obj1.Position().Sub(obj2.Position()).Normalize()
-	correction := normal.Mul(penetration / (obj1.M + obj2.M))
-	return true, correction
 }

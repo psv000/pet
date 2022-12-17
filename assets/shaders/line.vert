@@ -3,6 +3,7 @@
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
 
+uniform float length;
 uniform float thickness;
 uniform vec2 resolution;
 uniform mat4 model;
@@ -13,5 +14,5 @@ void main() {
     vec3 n = normal;
     n.xy /= resolution;
     vec3 delta = vec3(n * thickness);
-    gl_Position = project * view * model * vec4(position + delta, 1);
+    gl_Position = project * view * model * vec4((position *length) + delta, 1);
 }

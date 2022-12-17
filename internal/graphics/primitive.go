@@ -8,4 +8,6 @@ type Primitive interface {
 
 	Render()
 	Update(project, camera mgl32.Mat4)
+
+	Program() Program
 }

@@ -4,27 +4,29 @@ import (
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
 	"runtime"
+	"unsafe"
 )
 
 type mesh struct {
 	node
 	colorful
+	programmable
 
 	vao, vbo, ibo uint32
 	indices       int32
-
-	program Program
 }
 
-func NewPrimitive(shader Program, vertices []float32, indices []uint32) Primitive {
+func NewPrimitive(program Program, vertices []float32, indices []uint32, attributes VertexAttributes) Primitive {
 	p := &mesh{
 		node: node{
 			scl: mgl32.Vec3{1., 1., 1.},
 		},
-		program: shader,
+		programmable: programmable{
+			program: program,
+		},
 		indices: int32(len(indices)),
 	}
-	p.glMesh(vertices, indices)
+	p.glMesh(vertices, indices, attributes)
 	return p
 }
 
@@ -49,7 +51,11 @@ func (m *mesh) Render() {
 	gl.BindVertexArray(0)
 }
 
-func (m *mesh) glMesh(vertices []float32, indices []uint32) {
+func (m *mesh) Program() Program {
+	return m.program
+}
+
+func (m *mesh) glMesh(vertices []float32, indices []uint32, attributes VertexAttributes) {
 	gl.GenVertexArrays(1, &m.vao)
 	gl.GenBuffers(1, &m.vbo)
 	gl.GenBuffers(1, &m.ibo)
@@ -68,19 +74,10 @@ func (m *mesh) glMesh(vertices []float32, indices []uint32) {
 	gl.BindBuffer(gl.ARRAY_BUFFER, m.vbo)
 	gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*4, gl.Ptr(vertices), gl.STATIC_DRAW)
 
-	// size of one whole vertex (sum of attrib sizes)
-	var stride int32 = 3*4 + 2*4
-	var offset = 0
-
-	// position
-	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, stride, gl.PtrOffset(offset))
-	gl.EnableVertexAttribArray(0)
-	offset += 3 * 4
-
-	// uv position
-	gl.VertexAttribPointer(1, 2, gl.FLOAT, false, stride, gl.PtrOffset(offset))
-	gl.EnableVertexAttribArray(1)
-	offset += 2 * 4
+	for i, attr := range attributes.List {
+		gl.VertexAttribPointer(uint32(i), attr.Size, attr.Type, attr.Normalized, attributes.Stride, unsafe.Pointer(attr.Offset))
+		gl.EnableVertexAttribArray(uint32(i))
+	}
 
 	gl.BindVertexArray(0)
 }

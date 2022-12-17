@@ -3,6 +3,7 @@ package solid
 import (
 	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
+	"github.com/go-gl/mathgl/mgl64"
 	"pet/internal/physics"
 	"time"
 	"unsafe"
@@ -12,33 +13,48 @@ import (
 )
 
 type Scene struct {
-	window  *window.Window
-	camera  *graphics.Camera
-	objects map[uintptr]*Object
+	window     *window.Window
+	camera     *graphics.Camera
+	spheres    map[uintptr]*Sphere
+	rectangles map[uintptr]*Wall
 
 	ph *physics.System
 }
 
 func NewScene(window *window.Window, ph *physics.System) *Scene {
 	return &Scene{
-		window:  window,
-		camera:  graphics.NewCamera(mgl32.Vec3{0, 0, 3}, mgl32.Vec3{0, -1, 0}, -90, 0, window.InputManager()),
-		objects: make(map[uintptr]*Object, 32),
-		ph:      ph,
+		window:     window,
+		camera:     graphics.NewCamera(mgl32.Vec3{0, 0, 3}, mgl32.Vec3{0, -1, 0}, -90, 0, window.InputManager()),
+		spheres:    make(map[uintptr]*Sphere, 32),
+		rectangles: make(map[uintptr]*Wall, 32),
+		ph:         ph,
 	}
 }
 
-func (s *Scene) ObtainObject() *Object {
-	obj := NewObject(
+func (s *Scene) ObtainSphere() *Sphere {
+	obj := NewSphere(
 		NewDot(),
-		s.ph.ObtainObject(),
+		s.ph.ObtainSphere(),
 	)
-	s.objects[uintptr(unsafe.Pointer(obj))] = obj
+	s.spheres[uintptr(unsafe.Pointer(obj))] = obj
 	return obj
 }
 
-func (s *Scene) ReleaseObject(obj *Object) {
-	delete(s.objects, uintptr(unsafe.Pointer(obj)))
+func (s *Scene) ReleaseSphere(obj *Sphere) {
+	delete(s.spheres, uintptr(unsafe.Pointer(obj)))
+}
+
+func (s *Scene) ObtainWall(position, size mgl64.Vec3) *Wall {
+	obj := NewWall(
+		NewRectangle(Vec3L(position), Vec3L(size)),
+		s.ph.ObtainCuboid(),
+	)
+	s.rectangles[uintptr(unsafe.Pointer(obj))] = obj
+	return obj
+}
+
+func (s *Scene) ReleaseWall(obj *Wall) {
+	delete(s.rectangles, uintptr(unsafe.Pointer(obj)))
 }
 
 const (
@@ -81,8 +97,12 @@ func (s *Scene) Update(dt float64, speed float64) {
 			100.0)
 		camTransform := s.camera.GetTransform()
 
-		for i := range s.objects {
-			obj := s.objects[i]
+		for i := range s.spheres {
+			obj := s.spheres[i]
+			obj.Update(dt, projection, camTransform)
+		}
+		for i := range s.rectangles {
+			obj := s.rectangles[i]
 			obj.Update(dt, projection, camTransform)
 		}
 	}, samplePerFrames, &gCounter, &gSamplerDur)
