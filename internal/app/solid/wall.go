@@ -3,22 +3,22 @@ package solid
 import (
 	"github.com/go-gl/mathgl/mgl32"
 	"pet/internal/graphics"
-	"pet/internal/physics"
+	"pet/internal/physics/collisions"
 )
 
 type Wall struct {
 	graphics graphics.Primitive
-	physics  physics.CuboidCollided
+	physics  collisions.CuboidCollided
 }
 
-func NewWall(graphics graphics.Primitive, physics physics.CuboidCollided) *Wall {
+func NewWall(graphics graphics.Primitive, physics collisions.CuboidCollided) *Wall {
 	return &Wall{
 		graphics: graphics,
 		physics:  physics,
 	}
 }
 
-func (obj *Wall) Physics() physics.CuboidCollided {
+func (obj *Wall) Physics() collisions.CuboidCollided {
 	return obj.physics
 }
 

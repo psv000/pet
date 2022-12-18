@@ -1,12 +1,14 @@
-package physics
+package collisions
 
 import (
-	"github.com/go-gl/mathgl/mgl64"
 	"math"
+
+	"pet/internal/physics/model"
+
+	"github.com/go-gl/mathgl/mgl64"
 )
 
-type SphereCollided interface {
-	Collided
+type Sphere interface {
 	Model
 
 	SetRadius(radius float64)
@@ -14,11 +16,11 @@ type SphereCollided interface {
 }
 
 type sphere struct {
-	model
+	model.Core
 	radius float64
 }
 
-func NewSphere() SphereCollided {
+func NewSphere() Sphere {
 	return &sphere{
 		radius: 1.,
 	}
@@ -32,7 +34,7 @@ func (obj *sphere) Radius() float64 {
 	return obj.radius
 }
 
-func DetectSpheresCollision(obj1, obj2 SphereCollided) (bool, float64) {
+func DetectSpheresCollision(obj1, obj2 Sphere) (bool, float64) {
 	l := obj2.Position().Sub(obj1.Position())
 	dsq := l.Dot(l)
 	r := obj1.Radius() + obj2.Radius()
@@ -40,7 +42,7 @@ func DetectSpheresCollision(obj1, obj2 SphereCollided) (bool, float64) {
 	return dsq < rsq, r - math.Sqrt(dsq)
 }
 
-func AmendSpheres(penetration float64, obj1, obj2 SphereCollided) {
+func AmendSpheres(penetration float64, obj1, obj2 Sphere) {
 	normal := obj1.Position().Sub(obj2.Position()).Normalize()
 	correction := normal.Mul(penetration / (obj1.Mass() + obj2.Mass()))
 
@@ -48,7 +50,7 @@ func AmendSpheres(penetration float64, obj1, obj2 SphereCollided) {
 	obj2.SetPosition(obj2.Position().Sub(correction.Mul(obj2.Mass())))
 }
 
-func ResolveSpheresCollision(dt float64, obj1, obj2 SphereCollided) {
+func ResolveSpheresCollision(dt float64, obj1, obj2 Sphere) {
 	vec := obj1.Position().Sub(obj2.Position())
 
 	n := vec.Normalize()
@@ -75,7 +77,7 @@ func ResolveSpheresCollision(dt float64, obj1, obj2 SphereCollided) {
 	obj2.SetVelocity(obj2Vel)
 }
 
-func DetectSphereVsCuboidCollision(c SphereCollided, p CuboidCollided) (bool, float64, mgl64.Vec3) {
+func DetectSphereVsCuboidCollision(c Sphere, p CuboidCollided) (bool, float64, mgl64.Vec3) {
 	pc := p.Position().Add(p.Size().Mul(0.5))
 	n := c.Position().Sub(pc)
 
@@ -112,16 +114,19 @@ func DetectSphereVsCuboidCollision(c SphereCollided, p CuboidCollided) (bool, fl
 		return false, 0., mgl64.Vec3{}
 	}
 
-	var penetration float64
-	if inside {
-		penetration = -(c.Radius() - d)
-	} else {
-		penetration = c.Radius() - d
-	}
-	return true, penetration, p.Position().Add(p.Size().Mul(0.5)).Add(closest)
+	//var penetration float64
+	//if inside {
+	//	penetration = -(c.Radius() - d)
+	//} else {
+	//	penetration = c.Radius() - d
+	//}
+
+	closest = p.Position().Add(p.Size().Mul(0.5)).Add(closest)
+
+	return true, c.Radius() - closest.Sub(c.Position()).Len(), closest
 }
 
-func ResolveSphereVsCuboidCollision(c SphereCollided, p CuboidCollided, point mgl64.Vec3) {
+func ResolveSphereVsCuboidCollision(c Sphere, p CuboidCollided, point mgl64.Vec3) {
 	rv := c.Velocity().Sub(p.Velocity())
 	n := c.Position().Sub(point).Normalize()
 	velProjection := rv.Dot(n)

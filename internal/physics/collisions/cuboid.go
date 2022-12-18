@@ -1,11 +1,12 @@
-package physics
+package collisions
 
 import (
+	"pet/internal/physics/model"
+
 	"github.com/go-gl/mathgl/mgl64"
 )
 
 type CuboidCollided interface {
-	Collided
 	Model
 
 	Size() mgl64.Vec3
@@ -13,7 +14,7 @@ type CuboidCollided interface {
 }
 
 type cuboid struct {
-	model
+	model.Core
 
 	size mgl64.Vec3
 }

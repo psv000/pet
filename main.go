@@ -97,7 +97,7 @@ func setup(win *window.Window, scene *solid.Scene) {
 		r := scene.ObtainWall(pos[i], size[i])
 		r.Graphics().SetColor(mgl32.Vec4{0.3, 0.01, 0.1, 1})
 		r.Physics().SetMass(9999)
-		r.Physics().SetRestitution(0.7)
+		r.Physics().SetRestitution(0.4)
 		r.Physics().SetSize(size[i])
 		r.Physics().SetPosition(pos[i])
 	}
@@ -132,7 +132,6 @@ func setup(win *window.Window, scene *solid.Scene) {
 		}
 
 		win.Render(func(dt float64) {
-			//dot2.v = mgl64.Vec3{}
 			scene.Update(dt, speedFactor)
 		})
 	}

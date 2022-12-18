@@ -1,4 +1,4 @@
-package physics
+package model
 
 import (
 	"github.com/go-gl/mathgl/mgl64"
@@ -24,59 +24,59 @@ type Model interface {
 	Update(dt float64)
 }
 
-type model struct {
+type Core struct {
 	mass, restitution  float64
 	velocity, force    mgl64.Vec3
 	position, rotation mgl64.Vec3
 }
 
-func (m *model) Position() mgl64.Vec3 {
+func (m *Core) Position() mgl64.Vec3 {
 	return m.position
 }
 
-func (m *model) Rotation() mgl64.Vec3 {
+func (m *Core) Rotation() mgl64.Vec3 {
 	return m.rotation
 }
 
-func (m *model) Velocity() mgl64.Vec3 {
+func (m *Core) Velocity() mgl64.Vec3 {
 	return m.velocity
 }
 
-func (m *model) Mass() float64 {
+func (m *Core) Mass() float64 {
 	return m.mass
 }
 
-func (m *model) Restitution() float64 {
+func (m *Core) Restitution() float64 {
 	return m.restitution
 }
 
-func (m *model) SetPosition(p mgl64.Vec3) {
+func (m *Core) SetPosition(p mgl64.Vec3) {
 	m.position = p
 }
 
-func (m *model) SetVelocity(v mgl64.Vec3) {
+func (m *Core) SetVelocity(v mgl64.Vec3) {
 	m.velocity = v
 }
 
-func (m *model) SetMass(mass float64) {
+func (m *Core) SetMass(mass float64) {
 	m.mass = mass
 }
 
-func (m *model) SetRestitution(restitution float64) {
+func (m *Core) SetRestitution(restitution float64) {
 	m.restitution = restitution
 }
 
-func (m *model) AddVelocity(v mgl64.Vec3) {
+func (m *Core) AddVelocity(v mgl64.Vec3) {
 	m.velocity = m.velocity.Add(v)
 }
 
-func (m *model) ApplyForce(dt float64, force mgl64.Vec3) {
+func (m *Core) ApplyForce(dt float64, force mgl64.Vec3) {
 	m.force = force
 	a := m.force.Mul(1. / m.mass)
 	m.velocity = m.velocity.Add(a.Mul(dt))
 }
 
-func (m *model) Update(dt float64) {
+func (m *Core) Update(dt float64) {
 	s := m.velocity.Mul(dt)
 	m.position = m.position.Add(s)
 }

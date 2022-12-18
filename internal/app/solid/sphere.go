@@ -5,25 +5,25 @@ import (
 	"github.com/go-gl/mathgl/mgl64"
 	"math"
 	"pet/internal/graphics"
-	"pet/internal/physics"
+	"pet/internal/physics/collisions"
 )
 
 type Sphere struct {
 	graphics graphics.Primitive
-	physics  physics.SphereCollided
+	physics  collisions.Sphere
 
 	// - service -
 	velocity Line
 }
 
-func NewSphere(g graphics.Primitive, p physics.SphereCollided) *Sphere {
+func NewSphere(g graphics.Primitive, p collisions.Sphere) *Sphere {
 	return &Sphere{
 		graphics: g, physics: p,
 		velocity: NewLine(),
 	}
 }
 
-func (obj *Sphere) Physics() physics.SphereCollided {
+func (obj *Sphere) Physics() collisions.Sphere {
 	return obj.physics
 }
 

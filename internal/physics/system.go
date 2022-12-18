@@ -2,31 +2,35 @@ package physics
 
 import (
 	"github.com/go-gl/mathgl/mgl64"
+	"pet/internal/physics/collisions"
+	"pet/internal/physics/gravity"
 )
 
 type System struct {
-	g, a float64
+	g, a       float64
+	resolution int
 
-	spheres []SphereCollided
-	cuboids []CuboidCollided
+	spheres []collisions.Sphere
+	cuboids []collisions.CuboidCollided
 }
 
 func NewSystem() *System {
 	return &System{
-		spheres: make([]SphereCollided, 0, 32),
-		cuboids: make([]CuboidCollided, 0, 32),
-		g:       6.6743e-3,
-		a:       9.81,
+		spheres:    make([]collisions.Sphere, 0, 32),
+		cuboids:    make([]collisions.CuboidCollided, 0, 32),
+		resolution: 10,
+		g:          6.6743e-3,
+		a:          0.981e1,
 	}
 }
 
-func (s *System) ObtainSphere() SphereCollided {
-	sphere := NewSphere()
+func (s *System) ObtainSphere() collisions.Sphere {
+	sphere := collisions.NewSphere()
 	s.spheres = append(s.spheres, sphere)
 	return sphere
 }
 
-func (s *System) ReleaseSphere(del SphereCollided) {
+func (s *System) ReleaseSphere(del collisions.Sphere) {
 	for i, obj := range s.spheres {
 		if obj == del {
 			s.spheres[i] = s.spheres[len(s.spheres)-1]
@@ -36,13 +40,13 @@ func (s *System) ReleaseSphere(del SphereCollided) {
 	}
 }
 
-func (s *System) ObtainCuboid() CuboidCollided {
-	cuboid := NewCuboid()
+func (s *System) ObtainCuboid() collisions.CuboidCollided {
+	cuboid := collisions.NewCuboid()
 	s.cuboids = append(s.cuboids, cuboid)
 	return cuboid
 }
 
-func (s *System) ReleaseCuboid(del CuboidCollided) {
+func (s *System) ReleaseCuboid(del collisions.CuboidCollided) {
 	for i, obj := range s.cuboids {
 		if obj == del {
 			s.cuboids[i] = s.cuboids[len(s.cuboids)-1]
@@ -53,39 +57,33 @@ func (s *System) ReleaseCuboid(del CuboidCollided) {
 }
 
 func (s *System) Update(dt float64) {
-	s.gravity(dt)
-	s.collisions(dt)
+	dt /= float64(s.resolution)
+	for i := 0; i < s.resolution; i++ {
+		s.gravity(dt)
+		s.collisions(dt)
 
-	for _, obj := range s.spheres {
-		obj.Update(dt)
+		for _, obj := range s.spheres {
+			obj.Update(dt)
+		}
 	}
 }
 
 func (s *System) gravity(dt float64) {
-	set := make(map[SphereCollided]SphereCollided, len(s.spheres))
+	set := make(map[collisions.Sphere]collisions.Sphere, len(s.spheres))
 	for _, obj1 := range s.spheres {
 		for _, obj2 := range s.spheres {
 			if obj1 == obj2 || set[obj2] == obj1 {
 				continue
 			}
 			set[obj1] = obj2
-			Dir := obj2.Position().Sub(obj1.Position())
-			r := Dir.Len()
-			r2 := r * r
-			F := s.g * obj1.Mass() * obj2.Mass() / r2
-
-			ƒ1 := Dir.Normalize().Mul(F)
-			ƒ2 := ƒ1.Mul(-1.)
-
-			obj1.ApplyForce(dt, ƒ1)
-			obj2.ApplyForce(dt, ƒ2)
+			gravity.Apply(s.g, dt, obj1, obj2)
 		}
-		obj1.ApplyForce(dt, mgl64.Vec3{0., -1., 0.}.Mul(obj1.Mass()*s.a))
+		gravity.Global(s.a, dt, obj1)
 	}
 }
 
 func (s *System) collisions(dt float64) {
-	processed := make(map[SphereCollided]SphereCollided, len(s.spheres))
+	processed := make(map[collisions.Sphere]collisions.Sphere, len(s.spheres))
 
 	var c mgl64.Vec3
 	for _, obj := range s.spheres {
@@ -102,23 +100,24 @@ func (s *System) collisions(dt float64) {
 
 			var collision bool
 			var penetration float64
-			if collision, penetration = DetectSpheresCollision(obj1, obj2); !collision {
+			if collision, penetration = collisions.DetectSpheresCollision(obj1, obj2); !collision {
 				continue
 			}
-			AmendSpheres(penetration, obj1, obj2)
-			ResolveSpheresCollision(dt, obj1, obj2)
+			collisions.AmendSpheres(penetration, obj1, obj2)
+			collisions.ResolveSpheresCollision(dt, obj1, obj2)
 		}
 	}
 	for _, obj1 := range s.spheres {
 		for _, obj2 := range s.cuboids {
-			ok, penetration, point := DetectSphereVsCuboidCollision(obj1, obj2)
+			ok, penetration, point := collisions.DetectSphereVsCuboidCollision(obj1, obj2)
 			if !ok {
 				continue
 			}
-			sdt := obj1.Position().Sub(point).Normalize().Mul(penetration * dt)
+			_ = penetration
+			sdt := obj1.Position().Sub(point).Normalize().Mul(penetration)
 			obj1.SetPosition(obj1.Position().Add(sdt))
 
-			ResolveSphereVsCuboidCollision(obj1, obj2, point)
+			collisions.ResolveSphereVsCuboidCollision(obj1, obj2, point)
 		}
 	}
 }
