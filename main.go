@@ -5,6 +5,7 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/go-gl/mathgl/mgl64"
 	"math"
+	"math/rand"
 	solid "pet/internal/app/solid"
 	"pet/internal/physics"
 	"pet/internal/resources"
@@ -45,7 +46,7 @@ func setup(win *window.Window, scene *solid.Scene) {
 	dot1.Graphics().SetScale(scl)
 	dot1.Graphics().SetColor(mgl32.Vec4{241. / 255., 120. / 255., 41. / 255., 1.})
 	dot1.Physics().SetRadius(0.1 * float64(scl))
-	dot1.Physics().SetRestitution(0.9)
+	dot1.Physics().SetRestitution(0.3)
 
 	dot2 := scene.ObtainSphere()
 	dot2.Physics().SetMass(3.)
@@ -58,12 +59,12 @@ func setup(win *window.Window, scene *solid.Scene) {
 	var objs []*solid.Sphere
 	for i := 0; i < 10; i++ {
 		obj := scene.ObtainSphere()
-		obj.Physics().SetMass(0.5 + 0.05*float64(i))
+		obj.Physics().SetMass(0.5)
 		scl = float32(0.4)
 		obj.Graphics().SetScale(scl)
 		obj.Graphics().SetColor(mgl32.Vec4{182. / 255., 181. / 255., 233. / 255., 1.})
 		obj.Physics().SetRadius(0.1 * float64(scl))
-		obj.Physics().SetRestitution(0.6)
+		obj.Physics().SetRestitution(0.8)
 		objs = append(objs, obj)
 	}
 
@@ -72,11 +73,11 @@ func setup(win *window.Window, scene *solid.Scene) {
 		dot1.Physics().SetVelocity(mgl64.Vec3{0.5, 0, 0})
 
 		dot2.SetPosition(mgl32.Vec3{1.1, -0.3, 0})
-		dot2.Physics().SetVelocity(mgl64.Vec3{-0.5, -0.1, 0})
+		dot2.Physics().SetVelocity(mgl64.Vec3{-2, 2.1, 0})
 
 		for i, obj := range objs {
 			obj.Physics().SetPosition(mgl64.Vec3{-0.8 + 0.2*float64(i), 1, 0})
-			obj.Physics().SetVelocity(mgl64.Vec3{})
+			obj.Physics().SetVelocity(mgl64.Vec3{(rand.Float64()*2. - 1.) * 3, (rand.Float64()*2. - 1.) * 3, 0.})
 		}
 	}
 
@@ -97,7 +98,7 @@ func setup(win *window.Window, scene *solid.Scene) {
 		r := scene.ObtainWall(pos[i], size[i])
 		r.Graphics().SetColor(mgl32.Vec4{0.3, 0.01, 0.1, 1})
 		r.Physics().SetMass(9999)
-		r.Physics().SetRestitution(0.4)
+		r.Physics().SetRestitution(0.8)
 		r.Physics().SetSize(size[i])
 		r.Physics().SetPosition(pos[i])
 	}
@@ -109,6 +110,7 @@ func setup(win *window.Window, scene *solid.Scene) {
 		speedMin  = speedStep
 		speedMax  = 3.
 	)
+
 	for !win.ShouldClose() {
 		win.BeforeRender()
 		if win.InputManager().IsActive(window.ProgramPause) {
@@ -120,6 +122,14 @@ func setup(win *window.Window, scene *solid.Scene) {
 		}
 		if win.InputManager().IsActive(window.ProgramReset) {
 			reset()
+
+			win.ResetFrameTime()
+			win.Render(func(dt float64) {
+				scene.Update(dt, speedFactor)
+			})
+
+			time.Sleep(time.Millisecond * 700)
+			win.ResetFrameTime()
 		}
 
 		if win.InputManager().IsActive(window.Faster) {

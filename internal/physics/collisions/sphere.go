@@ -114,15 +114,7 @@ func DetectSphereVsCuboidCollision(c Sphere, p CuboidCollided) (bool, float64, m
 		return false, 0., mgl64.Vec3{}
 	}
 
-	//var penetration float64
-	//if inside {
-	//	penetration = -(c.Radius() - d)
-	//} else {
-	//	penetration = c.Radius() - d
-	//}
-
 	closest = p.Position().Add(p.Size().Mul(0.5)).Add(closest)
-
 	return true, c.Radius() - closest.Sub(c.Position()).Len(), closest
 }
 

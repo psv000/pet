@@ -14,6 +14,8 @@ type Sphere struct {
 
 	// - service -
 	velocity Line
+
+	vel mgl64.Vec3
 }
 
 func NewSphere(g graphics.Primitive, p collisions.Sphere) *Sphere {
@@ -42,16 +44,17 @@ func (obj *Sphere) Update(dt float64, projectTransform, camTransform mgl32.Mat4)
 	pos := mgl32.Vec3{float32(x), float32(y), float32(z)}
 
 	{
-		obj.velocity.SetLength(float32(obj.physics.Velocity().Len()))
+		obj.velocity.SetLength(float32(math.Log10(obj.physics.Velocity().Len() * 10.)))
 	}
 	{
-		d := mgl64.Vec3{1., 0., 0.}.Dot(obj.physics.Velocity())
-		cos := d / obj.physics.Velocity().Len()
-		diff := math.Abs(obj.physics.Velocity().Y())
+		obj.vel = obj.physics.Velocity().Sub(obj.vel).Mul(dt * 30).Add(obj.vel)
+		d := mgl64.Vec3{1., 0., 0.}.Dot(obj.vel)
+		cos := d / obj.vel.Len()
+		diff := math.Abs(obj.vel.Y())
 		if diff == 0 {
 			diff = 1
 		}
-		angle := math.Acos(cos) * obj.physics.Velocity().Y() / diff
+		angle := math.Acos(cos) * obj.vel.Y() / diff
 		obj.velocity.SetRotation(mgl32.Vec3{0., 0., float32(angle)})
 	}
 

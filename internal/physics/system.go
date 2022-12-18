@@ -18,8 +18,8 @@ func NewSystem() *System {
 	return &System{
 		spheres:    make([]collisions.Sphere, 0, 32),
 		cuboids:    make([]collisions.CuboidCollided, 0, 32),
-		resolution: 10,
-		g:          6.6743e-3,
+		resolution: 50,
+		g:          6.6743e-11,
 		a:          0.981e1,
 	}
 }

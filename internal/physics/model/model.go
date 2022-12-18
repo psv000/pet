@@ -9,11 +9,12 @@ type Model interface {
 	Rotation() mgl64.Vec3
 	Velocity() mgl64.Vec3
 
+	SetPosition(position mgl64.Vec3)
+	SetRotation(rotation mgl64.Vec3)
+	SetVelocity(vel mgl64.Vec3)
+
 	Mass() float64
 	Restitution() float64
-
-	SetPosition(position mgl64.Vec3)
-	SetVelocity(vel mgl64.Vec3)
 
 	SetMass(mass float64)
 	SetRestitution(restitution float64)
@@ -38,20 +39,24 @@ func (m *Core) Rotation() mgl64.Vec3 {
 	return m.rotation
 }
 
-func (m *Core) Velocity() mgl64.Vec3 {
-	return m.velocity
-}
-
-func (m *Core) Mass() float64 {
-	return m.mass
-}
-
 func (m *Core) Restitution() float64 {
 	return m.restitution
 }
 
 func (m *Core) SetPosition(p mgl64.Vec3) {
 	m.position = p
+}
+
+func (m *Core) SetRotation(r mgl64.Vec3) {
+	m.rotation = r
+}
+
+func (m *Core) Velocity() mgl64.Vec3 {
+	return m.velocity
+}
+
+func (m *Core) Mass() float64 {
+	return m.mass
 }
 
 func (m *Core) SetVelocity(v mgl64.Vec3) {
