@@ -51,30 +51,25 @@ func AmendSpheres(penetration float64, obj1, obj2 Sphere) {
 }
 
 func ResolveSpheresCollision(dt float64, obj1, obj2 Sphere) {
-	vec := obj1.Position().Sub(obj2.Position())
+	rv := obj1.Velocity().Sub(obj2.Velocity())
+	n := obj1.Position().Sub(obj2.Position()).Normalize()
+	velAlongNormal := rv.Dot(n)
 
-	n := vec.Normalize()
-	tan := mgl64.Vec3{-n[1], n[0], 0}
-
-	dpTan1 := obj1.Velocity()[0]*tan[0] + obj1.Velocity()[1]*tan[1]
-	dpTan2 := obj2.Velocity()[0]*tan[0] + obj2.Velocity()[1]*tan[1]
-
-	dpNorm1 := obj1.Velocity()[0]*n[0] + obj1.Velocity()[1]*n[1]
-	dpNorm2 := obj2.Velocity()[0]*n[0] + obj2.Velocity()[1]*n[1]
-
-	m1 := (dpNorm1*(obj1.Mass()-obj2.Mass()) + 2.*obj2.Mass()*dpNorm2) / (obj1.Mass() + obj2.Mass())
-	m2 := (dpNorm2*(obj2.Mass()-obj1.Mass()) + 2.*obj1.Mass()*dpNorm1) / (obj1.Mass() + obj2.Mass())
-
-	e := obj2.Restitution()
-	if obj1.Restitution() < obj1.Restitution() {
-		e = obj1.Restitution()
+	if velAlongNormal > 0 {
+		return
 	}
 
-	obj1Vel := tan.Mul(dpTan1).Add(n.Mul(m1 * e))
-	obj2Vel := tan.Mul(dpTan2).Add(n.Mul(m2 * e))
+	e := obj1.Restitution()
+	if e > obj2.Restitution() {
+		e = obj2.Restitution()
+	}
 
-	obj1.SetVelocity(obj1Vel)
-	obj2.SetVelocity(obj2Vel)
+	j := (1 + e) * velAlongNormal
+	j /= 1./obj1.Mass() + 1./obj2.Mass()
+
+	impulse := n.Mul(j)
+	obj1.AddVelocity(impulse.Mul(-1. / obj1.Mass()))
+	obj2.AddVelocity(impulse.Mul(1. / obj2.Mass()))
 }
 
 func DetectSphereVsCuboidCollision(c Sphere, p CuboidCollided) (bool, float64, mgl64.Vec3) {

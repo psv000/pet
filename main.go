@@ -27,7 +27,7 @@ func main() {
 	}
 	defer glfw.Terminate()
 
-	window := window.NewWindow(1024, 768, "Pet")
+	window := window.NewWindow(800, 600, "Pet")
 	resources.Load()
 	for _, p := range resources.ProgramList {
 		p.OnResolutionChange(mgl32.Vec2{1024, 768})
@@ -40,16 +40,16 @@ func main() {
 }
 
 func setup(win *window.Window, scene *solid.Scene) {
+	scl := float32(3.)
 	dot1 := scene.ObtainSphere()
 	dot1.Physics().SetMass(2.)
-	scl := float32(3.)
 	dot1.Graphics().SetScale(scl)
 	dot1.Graphics().SetColor(mgl32.Vec4{241. / 255., 120. / 255., 41. / 255., 1.})
 	dot1.Physics().SetRadius(0.1 * float64(scl))
 	dot1.Physics().SetRestitution(0.3)
 
 	dot2 := scene.ObtainSphere()
-	dot2.Physics().SetMass(3.)
+	dot2.Physics().SetMass(300.)
 	scl = float32(2.7)
 	dot2.Graphics().SetScale(scl)
 	dot2.Graphics().SetColor(mgl32.Vec4{137. / 255., 18. / 255., 89. / 255., 1.})
@@ -57,10 +57,10 @@ func setup(win *window.Window, scene *solid.Scene) {
 	dot2.Physics().SetRestitution(0.5)
 
 	var objs []*solid.Sphere
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 100; i++ {
 		obj := scene.ObtainSphere()
-		obj.Physics().SetMass(0.5)
-		scl = float32(0.4)
+		obj.Physics().SetMass(0.05)
+		scl = float32(0.2) + rand.Float32()*0.2
 		obj.Graphics().SetScale(scl)
 		obj.Graphics().SetColor(mgl32.Vec4{182. / 255., 181. / 255., 233. / 255., 1.})
 		obj.Physics().SetRadius(0.1 * float64(scl))
@@ -75,9 +75,18 @@ func setup(win *window.Window, scene *solid.Scene) {
 		dot2.SetPosition(mgl32.Vec3{1.1, -0.3, 0})
 		dot2.Physics().SetVelocity(mgl64.Vec3{-2, 2.1, 0})
 
+		x := 0.
+		y := 1.5
 		for i, obj := range objs {
-			obj.Physics().SetPosition(mgl64.Vec3{-0.8 + 0.2*float64(i), 1, 0})
+			if i%10 == 0 {
+				x = 0.
+				y -= 0.1
+			}
+
+			obj.Physics().SetPosition(mgl64.Vec3{-0.8 + x, y, 0})
 			obj.Physics().SetVelocity(mgl64.Vec3{(rand.Float64()*2. - 1.) * 3, (rand.Float64()*2. - 1.) * 3, 0.})
+
+			x += 0.2
 		}
 	}
 

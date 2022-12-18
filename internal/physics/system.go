@@ -4,6 +4,7 @@ import (
 	"github.com/go-gl/mathgl/mgl64"
 	"pet/internal/physics/collisions"
 	"pet/internal/physics/gravity"
+	"sort"
 )
 
 type System struct {
@@ -18,9 +19,9 @@ func NewSystem() *System {
 	return &System{
 		spheres:    make([]collisions.Sphere, 0, 32),
 		cuboids:    make([]collisions.CuboidCollided, 0, 32),
-		resolution: 50,
-		g:          6.6743e-11,
-		a:          0.981e1,
+		resolution: 10,
+		g:          6.6743e-3,
+		a:          0.981e-1,
 	}
 }
 
@@ -61,10 +62,10 @@ func (s *System) Update(dt float64) {
 	for i := 0; i < s.resolution; i++ {
 		s.gravity(dt)
 		s.collisions(dt)
-
 		for _, obj := range s.spheres {
 			obj.Update(dt)
 		}
+
 	}
 }
 
@@ -78,7 +79,9 @@ func (s *System) gravity(dt float64) {
 			set[obj1] = obj2
 			gravity.Apply(s.g, dt, obj1, obj2)
 		}
-		gravity.Global(s.a, dt, obj1)
+	}
+	for _, obj := range s.spheres {
+		gravity.Global(s.a, dt, obj)
 	}
 }
 
@@ -90,6 +93,16 @@ func (s *System) collisions(dt float64) {
 		c = c.Add(obj.Position())
 	}
 	c = c.Mul(1. / float64(len(s.spheres)))
+
+	sort.Slice(s.spheres, func(i, j int) bool {
+		obj1 := s.spheres[i]
+		obj2 := s.spheres[j]
+
+		if obj1.Position().X() >= obj2.Position().X() {
+			return obj1.Position().Y() < obj2.Position().Y()
+		}
+		return obj1.Position().X() < obj2.Position().X()
+	})
 
 	for _, obj1 := range s.spheres {
 		for _, obj2 := range s.spheres {
@@ -103,6 +116,8 @@ func (s *System) collisions(dt float64) {
 			if collision, penetration = collisions.DetectSpheresCollision(obj1, obj2); !collision {
 				continue
 			}
+			_ = penetration
+
 			collisions.AmendSpheres(penetration, obj1, obj2)
 			collisions.ResolveSpheresCollision(dt, obj1, obj2)
 		}

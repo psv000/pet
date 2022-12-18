@@ -48,6 +48,7 @@ func (obj *Sphere) Update(dt float64, projectTransform, camTransform mgl32.Mat4)
 	}
 	{
 		obj.vel = obj.physics.Velocity().Sub(obj.vel).Mul(dt * 30).Add(obj.vel)
+
 		d := mgl64.Vec3{1., 0., 0.}.Dot(obj.vel)
 		cos := d / obj.vel.Len()
 		diff := math.Abs(obj.vel.Y())
@@ -63,8 +64,8 @@ func (obj *Sphere) Update(dt float64, projectTransform, camTransform mgl32.Mat4)
 	obj.graphics.Update(projectTransform, camTransform)
 	obj.graphics.Render()
 
-	obj.velocity.Update(projectTransform, camTransform)
-	obj.velocity.Render()
+	//obj.velocity.Update(projectTransform, camTransform)
+	//obj.velocity.Render()
 }
 
 func Vec3L(vec mgl64.Vec3) mgl32.Vec3 {
