@@ -6,8 +6,10 @@ type Primitive interface {
 	Node
 	Colorful
 
-	Render()
+	Render(mode int)
 	Update(project, camera mgl32.Mat4)
 
 	Program() Program
+
+	Clear()
 }

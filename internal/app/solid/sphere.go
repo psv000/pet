@@ -1,6 +1,7 @@
 package solid
 
 import (
+	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/go-gl/mathgl/mgl64"
 	"math"
@@ -62,7 +63,7 @@ func (obj *Sphere) Update(dt float64, projectTransform, camTransform mgl32.Mat4)
 	obj.SetPosition(pos)
 
 	obj.graphics.Update(projectTransform, camTransform)
-	obj.graphics.Render()
+	obj.graphics.Render(gl.TRIANGLES)
 
 	//obj.velocity.Update(projectTransform, camTransform)
 	//obj.velocity.Render()

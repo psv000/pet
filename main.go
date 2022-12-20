@@ -1,17 +1,20 @@
 package main
 
 import (
-	"github.com/go-gl/glfw/v3.3/glfw"
-	"github.com/go-gl/mathgl/mgl32"
-	"github.com/go-gl/mathgl/mgl64"
 	"math"
 	"math/rand"
-	solid "pet/internal/app/solid"
+	_ "net/http/pprof"
+	"runtime"
+	"time"
+
+	"pet/internal/app/solid"
 	"pet/internal/physics"
 	"pet/internal/resources"
 	"pet/internal/window"
-	"runtime"
-	"time"
+
+	"github.com/go-gl/glfw/v3.3/glfw"
+	"github.com/go-gl/mathgl/mgl32"
+	"github.com/go-gl/mathgl/mgl64"
 )
 
 func init() {
@@ -46,25 +49,25 @@ func setup(win *window.Window, scene *solid.Scene) {
 	dot1.Graphics().SetScale(scl)
 	dot1.Graphics().SetColor(mgl32.Vec4{241. / 255., 120. / 255., 41. / 255., 1.})
 	dot1.Physics().SetRadius(0.1 * float64(scl))
-	dot1.Physics().SetRestitution(0.3)
+	dot1.Physics().SetRestitution(0.)
 
 	dot2 := scene.ObtainSphere()
-	dot2.Physics().SetMass(300.)
+	dot2.Physics().SetMass(3.)
 	scl = float32(2.7)
 	dot2.Graphics().SetScale(scl)
 	dot2.Graphics().SetColor(mgl32.Vec4{137. / 255., 18. / 255., 89. / 255., 1.})
 	dot2.Physics().SetRadius(0.1 * float64(scl))
-	dot2.Physics().SetRestitution(0.5)
+	dot2.Physics().SetRestitution(0.)
 
 	var objs []*solid.Sphere
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 220; i++ {
 		obj := scene.ObtainSphere()
 		obj.Physics().SetMass(0.05)
 		scl = float32(0.2) + rand.Float32()*0.2
 		obj.Graphics().SetScale(scl)
 		obj.Graphics().SetColor(mgl32.Vec4{182. / 255., 181. / 255., 233. / 255., 1.})
 		obj.Physics().SetRadius(0.1 * float64(scl))
-		obj.Physics().SetRestitution(0.8)
+		obj.Physics().SetRestitution(0.3)
 		objs = append(objs, obj)
 	}
 
@@ -75,18 +78,19 @@ func setup(win *window.Window, scene *solid.Scene) {
 		dot2.SetPosition(mgl32.Vec3{1.1, -0.3, 0})
 		dot2.Physics().SetVelocity(mgl64.Vec3{-2, 2.1, 0})
 
-		x := 0.
+		x := -1.8
 		y := 1.5
 		for i, obj := range objs {
-			if i%10 == 0 {
-				x = 0.
+			if i%20 == 0 {
+				x = -1.8
 				y -= 0.1
 			}
 
-			obj.Physics().SetPosition(mgl64.Vec3{-0.8 + x, y, 0})
+			obj.Physics().SetPosition(mgl64.Vec3{x, y, 0})
 			obj.Physics().SetVelocity(mgl64.Vec3{(rand.Float64()*2. - 1.) * 3, (rand.Float64()*2. - 1.) * 3, 0.})
 
-			x += 0.2
+			x += 0.19
+
 		}
 	}
 

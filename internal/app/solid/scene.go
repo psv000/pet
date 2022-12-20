@@ -2,6 +2,7 @@ package solid
 
 import (
 	"fmt"
+	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/go-gl/mathgl/mgl64"
 	"pet/internal/physics"
@@ -46,7 +47,7 @@ func (s *Scene) ReleaseSphere(obj *Sphere) {
 
 func (s *Scene) ObtainWall(position, size mgl64.Vec3) *Wall {
 	obj := NewWall(
-		NewRectangle(Vec3L(position), Vec3L(size)),
+		NewRectangle(Vec3L(size)),
 		s.ph.ObtainCuboid(),
 	)
 	s.rectangles[uintptr(unsafe.Pointer(obj))] = obj
@@ -83,6 +84,8 @@ func sample(fu func(), frames int, counter *int, duration *time.Duration) {
 	}
 }
 
+var rects []graphics.Primitive
+
 func (s *Scene) Update(dt float64, speed float64) {
 	sample(func() {
 		s.ph.Update(dt * speed)
@@ -105,5 +108,31 @@ func (s *Scene) Update(dt float64, speed float64) {
 			obj := s.rectangles[i]
 			obj.Update(dt, projection, camTransform)
 		}
+		//s.drawQuads(projection, camTransform)
 	}, samplePerFrames, &gCounter, &gSamplerDur)
+}
+
+func (s *Scene) drawQuads(projectTransform, camTransform mgl32.Mat4) {
+	tree := s.ph.Tree()
+	quads := tree.Quads()
+
+	for _, r := range rects {
+		r.Clear()
+	}
+	rects = make([]graphics.Primitive, 0, len(quads))
+	for _, q := range quads {
+		if len(q.Objects()) == 0 {
+			continue
+		}
+		lb, rt := q.Value()
+		rects = append(rects, NewRectangle(Vec3L(rt.Sub(lb))))
+		i := len(rects) - 1
+		count := len(q.Objects())
+		rects[i].SetPosition(Vec3L(lb))
+		rects[i].SetColor(mgl32.Vec4{0.01, 0.8, 0.1, float32(count) / 80.})
+	}
+	for _, r := range rects {
+		r.Update(projectTransform, camTransform)
+		r.Render(gl.TRIANGLES)
+	}
 }

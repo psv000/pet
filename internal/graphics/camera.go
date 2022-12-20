@@ -72,11 +72,11 @@ func (c *Camera) updatePosition(dt float64) {
 		c.pos = c.pos.Sub(c.front.Mul(adjustedSpeed))
 	}
 	if c.inputManager.IsActive(window.ProgramReset) {
-		c.pos = mgl32.Vec3{0., 0., 3.}
-		c.pitch = 0
-		c.yaw = -90
-
-		c.updateDirection()
+		//c.pos = mgl32.Vec3{0., 0., 3.}
+		//c.pitch = 0
+		//c.yaw = -90
+		//
+		//c.updateDirection()
 	}
 }
 

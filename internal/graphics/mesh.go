@@ -3,7 +3,6 @@ package graphics
 import (
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
-	"runtime"
 	"unsafe"
 )
 
@@ -17,7 +16,7 @@ type mesh struct {
 }
 
 func NewPrimitive(program Program, vertices []float32, indices []uint32, attributes VertexAttributes) Primitive {
-	p := &mesh{
+	m := &mesh{
 		node: node{
 			scl: mgl32.Vec3{1., 1., 1.},
 		},
@@ -26,8 +25,14 @@ func NewPrimitive(program Program, vertices []float32, indices []uint32, attribu
 		},
 		indices: int32(len(indices)),
 	}
-	p.glMesh(vertices, indices, attributes)
-	return p
+	m.glMesh(vertices, indices, attributes)
+	return m
+}
+
+func (m *mesh) Clear() {
+	gl.DeleteBuffers(1, &m.ibo)
+	gl.DeleteBuffers(1, &m.vbo)
+	gl.DeleteVertexArrays(1, &m.vao)
 }
 
 func (m *mesh) Update(project, camera mgl32.Mat4) {
@@ -43,11 +48,11 @@ func (m *mesh) Update(project, camera mgl32.Mat4) {
 	m.program.SetUniformValue("color", m.color)
 }
 
-func (m *mesh) Render() {
+func (m *mesh) Render(mode int) {
 	m.program.Apply()
 
 	gl.BindVertexArray(m.vao)
-	gl.DrawElements(gl.TRIANGLES, m.indices, gl.UNSIGNED_INT, nil)
+	gl.DrawElements(uint32(mode), m.indices, gl.UNSIGNED_INT, nil)
 	gl.BindVertexArray(0)
 }
 
@@ -59,12 +64,6 @@ func (m *mesh) glMesh(vertices []float32, indices []uint32, attributes VertexAtt
 	gl.GenVertexArrays(1, &m.vao)
 	gl.GenBuffers(1, &m.vbo)
 	gl.GenBuffers(1, &m.ibo)
-
-	runtime.SetFinalizer(m, func(m *mesh) {
-		gl.DeleteBuffers(1, &m.ibo)
-		gl.DeleteBuffers(1, &m.vbo)
-		gl.DeleteVertexArrays(1, &m.vao)
-	})
 
 	gl.BindVertexArray(m.vao)
 

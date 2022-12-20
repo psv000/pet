@@ -1,6 +1,7 @@
 package solid
 
 import (
+	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
 	"pet/internal/graphics"
 	"pet/internal/physics/collisions"
@@ -42,5 +43,5 @@ func (obj *Wall) Update(dt float64, projectTransform, camTransform mgl32.Mat4) {
 	obj.SetPosition(pos)
 
 	obj.graphics.Update(projectTransform, camTransform)
-	obj.graphics.Render()
+	obj.graphics.Render(gl.TRIANGLES)
 }

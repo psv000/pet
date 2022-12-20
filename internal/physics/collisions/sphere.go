@@ -34,6 +34,14 @@ func (obj *sphere) Radius() float64 {
 	return obj.radius
 }
 
+func (obj *sphere) Rect() mgl64.Vec4 {
+	c := obj.Position()
+	r := obj.Radius()
+	lb := c.Sub(mgl64.Vec3{r, r, 0})
+	rt := c.Add(mgl64.Vec3{r, r, 0})
+	return mgl64.Vec4{lb[0], lb[1], rt[0], rt[1]}
+}
+
 func DetectSpheresCollision(obj1, obj2 Sphere) (bool, float64) {
 	l := obj2.Position().Sub(obj1.Position())
 	dsq := l.Dot(l)
@@ -42,7 +50,7 @@ func DetectSpheresCollision(obj1, obj2 Sphere) (bool, float64) {
 	return dsq < rsq, r - math.Sqrt(dsq)
 }
 
-func AmendSpheres(penetration float64, obj1, obj2 Sphere) {
+func AmendSpheres(penetration float64, obj1, obj2 Model) {
 	normal := obj1.Position().Sub(obj2.Position()).Normalize()
 	correction := normal.Mul(penetration / (obj1.Mass() + obj2.Mass()))
 
@@ -50,7 +58,7 @@ func AmendSpheres(penetration float64, obj1, obj2 Sphere) {
 	obj2.SetPosition(obj2.Position().Sub(correction.Mul(obj2.Mass())))
 }
 
-func ResolveSpheresCollision(dt float64, obj1, obj2 Sphere) {
+func ResolveSpheresCollision(dt float64, obj1, obj2 Model) {
 	rv := obj1.Velocity().Sub(obj2.Velocity())
 	n := obj1.Position().Sub(obj2.Position()).Normalize()
 	velAlongNormal := rv.Dot(n)

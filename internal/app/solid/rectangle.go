@@ -11,7 +11,7 @@ type Rectangle struct {
 	graphics.Primitive
 }
 
-func NewRectangle(position, size mgl32.Vec3) graphics.Primitive {
+func NewRectangle(size mgl32.Vec3) graphics.Primitive {
 	d := &Rectangle{
 		Primitive: graphics.NewPrimitive(
 			resources.MeshShader,

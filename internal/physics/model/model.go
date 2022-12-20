@@ -8,6 +8,7 @@ type Model interface {
 	Position() mgl64.Vec3
 	Rotation() mgl64.Vec3
 	Velocity() mgl64.Vec3
+	Rect() mgl64.Vec4
 
 	SetPosition(position mgl64.Vec3)
 	SetRotation(rotation mgl64.Vec3)

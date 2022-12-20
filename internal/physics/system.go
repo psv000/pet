@@ -4,12 +4,14 @@ import (
 	"github.com/go-gl/mathgl/mgl64"
 	"pet/internal/physics/collisions"
 	"pet/internal/physics/gravity"
-	"sort"
+	"pet/internal/physics/quadtree"
 )
 
 type System struct {
 	g, a       float64
 	resolution int
+
+	tree *quadtree.Tree
 
 	spheres []collisions.Sphere
 	cuboids []collisions.CuboidCollided
@@ -19,10 +21,15 @@ func NewSystem() *System {
 	return &System{
 		spheres:    make([]collisions.Sphere, 0, 32),
 		cuboids:    make([]collisions.CuboidCollided, 0, 32),
-		resolution: 10,
-		g:          6.6743e-3,
-		a:          0.981e-1,
+		tree:       quadtree.NewTree(mgl64.Vec3{-2, -2, 0}, mgl64.Vec3{2, 2, 0}),
+		resolution: 13,
+		g:          6.6743e-11,
+		a:          0.981e1,
 	}
+}
+
+func (s *System) Tree() *quadtree.Tree {
+	return s.tree
 }
 
 func (s *System) ObtainSphere() collisions.Sphere {
@@ -60,8 +67,16 @@ func (s *System) ReleaseCuboid(del collisions.CuboidCollided) {
 func (s *System) Update(dt float64) {
 	dt /= float64(s.resolution)
 	for i := 0; i < s.resolution; i++ {
-		s.gravity(dt)
-		s.collisions(dt)
+		s.tree.Clear()
+		for _, obj := range s.spheres {
+			s.tree.Insert(obj)
+		}
+		for _, obj := range s.cuboids {
+			s.tree.Insert(obj)
+		}
+
+		s.gravity(dt, s.tree)
+		s.collisions(dt, s.tree)
 		for _, obj := range s.spheres {
 			obj.Update(dt)
 		}
@@ -69,70 +84,80 @@ func (s *System) Update(dt float64) {
 	}
 }
 
-func (s *System) gravity(dt float64) {
-	set := make(map[collisions.Sphere]collisions.Sphere, len(s.spheres))
+func (s *System) gravity(dt float64, tree *quadtree.Tree) {
 	for _, obj1 := range s.spheres {
-		for _, obj2 := range s.spheres {
-			if obj1 == obj2 || set[obj2] == obj1 {
+		for _, obj2 := range tree.Retrieve(obj1) {
+			if obj1 == obj2 {
 				continue
 			}
-			set[obj1] = obj2
 			gravity.Apply(s.g, dt, obj1, obj2)
 		}
-	}
-	for _, obj := range s.spheres {
-		gravity.Global(s.a, dt, obj)
+		gravity.Global(s.a, dt, obj1)
 	}
 }
 
-func (s *System) collisions(dt float64) {
-	processed := make(map[collisions.Sphere]collisions.Sphere, len(s.spheres))
+func (s *System) collisions(dt float64, tree *quadtree.Tree) {
+	for _, obj1 := range s.spheres {
+		retrieves := tree.Retrieve(obj1)
+		for _, obj2 := range retrieves {
+			if obj1 == obj2 {
+				continue
+			}
 
-	var c mgl64.Vec3
+			switch obj := obj2.(type) {
+			case collisions.Sphere:
+				var collision bool
+				var penetration float64
+				if collision, penetration = collisions.DetectSpheresCollision(obj1, obj); !collision {
+					continue
+				}
+
+				collisions.AmendSpheres(penetration, obj1, obj)
+				collisions.ResolveSpheresCollision(dt, obj1, obj)
+			case collisions.CuboidCollided:
+				ok, penetration, point := collisions.DetectSphereVsCuboidCollision(obj1, obj)
+				if !ok {
+					continue
+				}
+
+				sdt := obj1.Position().Sub(point).Normalize().Mul(penetration)
+				obj1.SetPosition(obj1.Position().Add(sdt))
+
+				collisions.ResolveSphereVsCuboidCollision(obj1, obj, point)
+			}
+
+		}
+	}
+}
+
+func (s *System) Bounds() (lb, rt mgl64.Vec3) {
+	lb = mgl64.Vec3{mgl64.MaxValue, mgl64.MaxValue, 0.}
+	rt = mgl64.Vec3{mgl64.MinValue, mgl64.MinValue, 0.}
 	for _, obj := range s.spheres {
-		c = c.Add(obj.Position())
+		lb = Min(lb, obj.Position())
+		rt = Max(rt, obj.Position())
 	}
-	c = c.Mul(1. / float64(len(s.spheres)))
+	return
+}
 
-	sort.Slice(s.spheres, func(i, j int) bool {
-		obj1 := s.spheres[i]
-		obj2 := s.spheres[j]
-
-		if obj1.Position().X() >= obj2.Position().X() {
-			return obj1.Position().Y() < obj2.Position().Y()
-		}
-		return obj1.Position().X() < obj2.Position().X()
-	})
-
-	for _, obj1 := range s.spheres {
-		for _, obj2 := range s.spheres {
-			if obj1 == obj2 || processed[obj2] == obj1 {
-				continue
-			}
-			processed[obj1] = obj2
-
-			var collision bool
-			var penetration float64
-			if collision, penetration = collisions.DetectSpheresCollision(obj1, obj2); !collision {
-				continue
-			}
-			_ = penetration
-
-			collisions.AmendSpheres(penetration, obj1, obj2)
-			collisions.ResolveSpheresCollision(dt, obj1, obj2)
-		}
+func Min(l, r mgl64.Vec3) (out mgl64.Vec3) {
+	out = r
+	if l[0] < r[0] {
+		out[0] = l[0]
 	}
-	for _, obj1 := range s.spheres {
-		for _, obj2 := range s.cuboids {
-			ok, penetration, point := collisions.DetectSphereVsCuboidCollision(obj1, obj2)
-			if !ok {
-				continue
-			}
-			_ = penetration
-			sdt := obj1.Position().Sub(point).Normalize().Mul(penetration)
-			obj1.SetPosition(obj1.Position().Add(sdt))
-
-			collisions.ResolveSphereVsCuboidCollision(obj1, obj2, point)
-		}
+	if l[1] < r[1] {
+		out[1] = l[1]
 	}
+	return
+}
+
+func Max(l, r mgl64.Vec3) (out mgl64.Vec3) {
+	out = r
+	if l[0] >= r[0] {
+		out[0] = l[0]
+	}
+	if l[1] >= r[1] {
+		out[1] = l[1]
+	}
+	return
 }

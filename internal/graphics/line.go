@@ -3,7 +3,6 @@ package graphics
 import (
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
-	"runtime"
 )
 
 type line struct {
@@ -35,6 +34,12 @@ func NewLine(program Program, thickness float32, vertices []float32, indices []u
 	return l
 }
 
+func (l *line) Clear() {
+	gl.DeleteBuffers(1, &l.ibo)
+	gl.DeleteBuffers(1, &l.vbo)
+	gl.DeleteVertexArrays(1, &l.vao)
+}
+
 func (l *line) Update(project, camera mgl32.Mat4) {
 	transform := mgl32.Translate3D(l.pos[0], l.pos[1], l.pos[2])
 	scale := mgl32.Scale3D(l.scl[0], l.scl[1], l.scl[2])
@@ -49,11 +54,11 @@ func (l *line) Update(project, camera mgl32.Mat4) {
 	l.program.SetUniformValue("color", l.color)
 }
 
-func (l *line) Render() {
+func (l *line) Render(mode int) {
 	l.program.Apply()
 
 	gl.BindVertexArray(l.vao)
-	gl.DrawElements(gl.TRIANGLES, l.indices, gl.UNSIGNED_INT, nil)
+	gl.DrawElements(uint32(mode), l.indices, gl.UNSIGNED_INT, nil)
 	gl.BindVertexArray(0)
 }
 
@@ -61,12 +66,6 @@ func (l *line) glLine(vertices []float32, indices []uint32) {
 	gl.GenVertexArrays(1, &l.vao)
 	gl.GenBuffers(1, &l.vbo)
 	gl.GenBuffers(1, &l.ibo)
-
-	runtime.SetFinalizer(l, func(l *line) {
-		gl.DeleteBuffers(1, &l.ibo)
-		gl.DeleteBuffers(1, &l.vbo)
-		gl.DeleteVertexArrays(1, &l.vao)
-	})
 
 	gl.BindVertexArray(l.vao)
 
