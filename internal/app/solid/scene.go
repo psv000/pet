@@ -1,12 +1,11 @@
 package solid
 
 import (
-	"fmt"
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/go-gl/mathgl/mgl64"
 	"pet/internal/physics"
-	"time"
+	"pet/internal/pkg/sampler"
 	"unsafe"
 
 	"pet/internal/graphics"
@@ -58,39 +57,18 @@ func (s *Scene) ReleaseWall(obj *Wall) {
 	delete(s.rectangles, uintptr(unsafe.Pointer(obj)))
 }
 
-const (
-	samplePerFrames = 240
-)
-
 var (
-	phSamplerDur time.Duration
-	phCounter    int
-
-	gSamplerDur time.Duration
-	gCounter    int
+	graphicsSampler = sampler.New(240, "graphics")
+	physicsSampler  = sampler.New(240, "physics")
 )
-
-func sample(fu func(), frames int, counter *int, duration *time.Duration) {
-	t := time.Now()
-	fu()
-	*duration += time.Since(t)
-	*counter++
-	c := *counter
-	if c%frames == 0 {
-		d := *duration
-		fmt.Printf("%v\n", d/time.Duration(c))
-		*counter = 0
-		*duration = 0
-	}
-}
 
 var rects []graphics.Primitive
 
 func (s *Scene) Update(dt float64, speed float64) {
-	sample(func() {
+	physicsSampler.Sample(func() {
 		s.ph.Update(dt * speed)
-	}, samplePerFrames, &phCounter, &phSamplerDur)
-	sample(func() {
+	})
+	graphicsSampler.Sample(func() {
 		s.camera.Update(dt)
 
 		fov := float32(60.0)
@@ -109,12 +87,12 @@ func (s *Scene) Update(dt float64, speed float64) {
 			obj.Update(dt, projection, camTransform)
 		}
 		//s.drawQuads(projection, camTransform)
-	}, samplePerFrames, &gCounter, &gSamplerDur)
+	})
 }
 
 func (s *Scene) drawQuads(projectTransform, camTransform mgl32.Mat4) {
 	tree := s.ph.Tree()
-	quads := tree.Quads()
+	quads := tree.Nodes()
 
 	for _, r := range rects {
 		r.Clear()

@@ -4,32 +4,42 @@ import (
 	"github.com/go-gl/mathgl/mgl64"
 	"pet/internal/physics/collisions"
 	"pet/internal/physics/gravity"
-	"pet/internal/physics/quadtree"
+	"pet/internal/pkg/sampler"
 )
 
-type System struct {
-	g, a       float64
-	resolution int
+type (
+	System struct {
+		g, a       float64
+		resolution int
 
-	tree *quadtree.Tree
+		trees
 
-	spheres []collisions.Sphere
-	cuboids []collisions.CuboidCollided
-}
+		spheres []collisions.Sphere
+		cuboids []collisions.CuboidCollided
+	}
+
+	trees struct {
+		collisions *collisions.TreeNode
+		gravity    *gravity.TreeNode
+	}
+)
 
 func NewSystem() *System {
 	return &System{
-		spheres:    make([]collisions.Sphere, 0, 32),
-		cuboids:    make([]collisions.CuboidCollided, 0, 32),
-		tree:       quadtree.NewTree(mgl64.Vec3{-2, -2, 0}, mgl64.Vec3{2, 2, 0}),
-		resolution: 13,
+		spheres: make([]collisions.Sphere, 0, 32),
+		cuboids: make([]collisions.CuboidCollided, 0, 32),
+		trees: trees{
+			collisions: collisions.NewTreeNode(mgl64.Vec3{-2, -2, 0}, mgl64.Vec3{2, 2, 0}),
+			gravity:    gravity.NewTreeNode(mgl64.Vec3{-2, -2, 0}, mgl64.Vec3{2, 2, 0}),
+		},
+		resolution: 20,
 		g:          6.6743e-11,
 		a:          0.981e1,
 	}
 }
 
-func (s *System) Tree() *quadtree.Tree {
-	return s.tree
+func (s *System) Tree() *collisions.TreeNode {
+	return s.trees.collisions
 }
 
 func (s *System) ObtainSphere() collisions.Sphere {
@@ -64,19 +74,34 @@ func (s *System) ReleaseCuboid(del collisions.CuboidCollided) {
 	}
 }
 
+var (
+	insertSampler   = sampler.New(4800, "insert tree")
+	retrieveSampler = sampler.New(2400, "retrieve")
+)
+
 func (s *System) Update(dt float64) {
 	dt /= float64(s.resolution)
 	for i := 0; i < s.resolution; i++ {
-		s.tree.Clear()
+
+		s.trees.collisions.Clear()
+		s.trees.gravity.Clear()
+
+		gravity.Gamma = s.g
+
 		for _, obj := range s.spheres {
-			s.tree.Insert(obj)
+			s.trees.collisions.Insert(obj)
 		}
-		for _, obj := range s.cuboids {
-			s.tree.Insert(obj)
+		for _, obj := range s.spheres {
+			s.trees.gravity.Insert(obj)
 		}
 
-		s.gravity(dt, s.tree)
-		s.collisions(dt, s.tree)
+		for _, obj := range s.cuboids {
+			s.trees.collisions.Insert(obj)
+		}
+
+		s.gravity(dt)
+		s.collisions(dt)
+
 		for _, obj := range s.spheres {
 			obj.Update(dt)
 		}
@@ -84,21 +109,18 @@ func (s *System) Update(dt float64) {
 	}
 }
 
-func (s *System) gravity(dt float64, tree *quadtree.Tree) {
-	for _, obj1 := range s.spheres {
-		for _, obj2 := range tree.Retrieve(obj1) {
-			if obj1 == obj2 {
-				continue
-			}
-			gravity.Apply(s.g, dt, obj1, obj2)
-		}
-		gravity.Global(s.a, dt, obj1)
+func (s *System) gravity(dt float64) {
+	s.trees.gravity.MassDistribution()
+	for _, obj := range s.spheres {
+		ƒ := s.trees.gravity.GravityForce(obj)
+		obj.ApplyForce(dt, ƒ)
+		gravity.Global(s.a, dt, obj)
 	}
 }
 
-func (s *System) collisions(dt float64, tree *quadtree.Tree) {
+func (s *System) collisions(dt float64) {
 	for _, obj1 := range s.spheres {
-		retrieves := tree.Retrieve(obj1)
+		retrieves := s.trees.collisions.Retrieve(obj1)
 		for _, obj2 := range retrieves {
 			if obj1 == obj2 {
 				continue
